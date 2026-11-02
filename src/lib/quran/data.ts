@@ -1,21 +1,5 @@
 import { asset } from '$app/paths';
-import type { Surah, SurahIndex } from './types';
-
-let surahs: Promise<Surah[]> | null = null;
-
-export function loadQuran(fetcher: typeof fetch = fetch): Promise<Surah[]> {
-	surahs ??= fetcher(asset('data/quran.json'))
-		.then((res) => {
-			if (!res.ok) throw new Error(`Failed to load Quran data (${res.status})`);
-			return res.json() as Promise<{ surahs: Surah[] }>;
-		})
-		.then((data) => data.surahs)
-		.catch((error) => {
-			surahs = null;
-			throw error;
-		});
-	return surahs;
-}
+import type { SurahIndex } from './types';
 
 let surahsIndex: Promise<SurahIndex[]> | null = null;
 
@@ -26,7 +10,7 @@ export function loadSurahs(fetcher: typeof fetch = fetch): Promise<SurahIndex[]>
 			return res.json() as Promise<SurahIndex[]>;
 		})
 		.catch((error) => {
-			surahs = null;
+			surahsIndex = null;
 			throw error;
 		});
 	return surahsIndex;

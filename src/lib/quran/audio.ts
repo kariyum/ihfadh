@@ -14,24 +14,25 @@ function hasCacheApi() {
 	return typeof caches !== 'undefined';
 }
 
-async function fetchVerseAudio(url: string): Promise<Blob> {
+async function fetchVerseAudio(url: string): Promise<ArrayBuffer> {
 	const cache = await caches.open(CACHE_NAME);
 	const cached = await cache.match(url);
-	if (cached) return cached.blob();
+	if (cached) return cached.arrayBuffer();
 
 	const response = await fetch(url);
+	console.log(response.ok);
 	if (!response.ok) throw new Error(`Audio request failed (${response.status})`);
+
 	await cache.put(url, response.clone());
-	return response.blob();
+	return response.arrayBuffer();
 }
 
 // Returns a URL that an <audio> element can play. Object URLs must be revoked by the caller.
 export async function getVerseAudioSource(
 	url: string
-): Promise<{ src: string; objectUrl: boolean }> {
-	if (!hasCacheApi()) return { src: url, objectUrl: false };
-	const blob = await fetchVerseAudio(url);
-	return { src: URL.createObjectURL(blob), objectUrl: true };
+): Promise<{ arrayBuffer: ArrayBuffer }> {
+	const arrayBuffer = await fetchVerseAudio(url);
+    return { arrayBuffer };
 }
 
 export async function cacheVerseAudio(url: string) {

@@ -8,6 +8,9 @@
 	--accent-soft: #e3efe9;
 	--gold: #b8922e;
 	color-scheme: light dark;
+	-webkit-tap-highlight-color: transparent;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -27,10 +30,11 @@
 	box-sizing: border-box;
 }
 
-html, body {
-  height: 100dvh;
-  margin: 0;
-  overflow: hidden;
+html,
+body {
+	height: 100dvh;
+	margin: 0;
+	overflow: hidden;
 }
 
 body {

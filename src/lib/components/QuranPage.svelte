@@ -29,6 +29,8 @@
 </script>
 
 <script lang="ts">
+	import { player } from '#lib/quran/player.svelte.ts';
+
 	let { svgContent, applyResizing }: { svgContent: string; applyResizing: boolean } = $props();
 
 	let container: HTMLDivElement;
@@ -48,6 +50,7 @@
 			el.setAttribute('fill', '#F9F05F');
 			el.addEventListener('click', () => {
 				console.log(surah, ayah);
+				player.play(surah, ayah);
 				if (selectedAyah) dim(selectedAyah.el);
 				selectedAyah = { surah, ayah, el };
 				highlight(el);

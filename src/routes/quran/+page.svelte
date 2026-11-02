@@ -5,15 +5,12 @@
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
 
-	let error: string | undefined = $state();
-	let loading = $state(false);
-
 	async function fetchQuranPage(page: number) {
 		const pageNumber = (page + 1).toString().padStart(3, '0');
 		const res = await fetch(`/hafs-svg/svg/${pageNumber}.svg`);
 
 		if (!res.ok) {
-			error = `SVG icon "${pageNumber}" not found`;
+			console.error(`SVG icon "${pageNumber}" not found`);
 		}
 
 		let svgContent = await res.text();
@@ -34,7 +31,6 @@
 	$effect(() => {
 		let pageIndex = pageNumber;
 		untrack(() => {
-		    console.log(pageIndex, pageIndexInView);
 			if (pageIndex != pageIndexInView) {
 				pageElements[pageIndex]?.scrollIntoView({ behavior: 'instant' });
 			}
@@ -91,10 +87,8 @@
 	});
 
 	async function fetchAround(pageIndex: number) {
-		loading = true;
 		fetchAndAssignPage(pageIndex);
 		fetchAhead(pageIndex);
-		loading = false;
 		return;
 	}
 

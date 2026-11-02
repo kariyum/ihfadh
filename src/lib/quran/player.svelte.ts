@@ -1,7 +1,6 @@
 import { browser } from '$app/env';
 import { settings } from '#lib/stores/settings.svelte.js';
 import { cacheVerseAudio, getVerseAudioSource, verseAudioUrl } from './audio';
-import { loadQuran } from './data';
 
 export type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused';
 
@@ -9,68 +8,51 @@ const SURAH_COUNT = 114;
 
 class Player {
 	surahNumber = $state<number | null>(null);
-	verse = $state(0);
+	verse = $state<number | null>(null);
 	status = $state<PlayerStatus>('idle');
 	error = $state<string | null>(null);
 
-	#audio: HTMLAudioElement | null = null;
-	#objectUrl: string | null = null;
-	#token = 0;
+	#audioContext: AudioContext | null = null;
+	#sources: AudioBufferSourceNode[] = [];
 
 	constructor() {
 		if (browser) {
-			this.#audio = new Audio();
-			this.#audio.addEventListener('ended', () => this.next(true));
+			this.#audioContext = new AudioContext();
 		}
 	}
 
-	async play(surahNumber: number, verse: number) {
-		const audio = this.#audio;
-		if (!audio) return;
+	async play(startSurah: number, startVerse: number) {
+		if (!this.#audioContext) return;
 
-		const token = ++this.#token;
-		this.surahNumber = surahNumber;
-		this.verse = verse;
+		this.surahNumber = startSurah;
+		this.verse = startVerse;
 		this.status = 'loading';
 		this.error = null;
 
-		try {
-			const url = verseAudioUrl(settings.reciter, surahNumber, verse);
-			const source = await getVerseAudioSource(url);
-			if (token !== this.#token) {
-				if (source.objectUrl) URL.revokeObjectURL(source.src);
-				return;
-			}
-
-			this.#releaseObjectUrl();
-			if (source.objectUrl) this.#objectUrl = source.src;
-			audio.src = source.src;
-			await audio.play();
-			this.status = 'playing';
-			this.#prefetchNext();
-		} catch {
-			if (token !== this.#token) return;
-			this.status = 'idle';
-			this.error = navigator.onLine
-				? 'Could not play this verse.'
-				: 'This verse is not downloaded and you are offline.';
-		}
+		const url = verseAudioUrl(settings.reciter, startSurah, startVerse);
+		const data = await getVerseAudioSource(url);
+		const source = this.#audioContext.createBufferSource();
+		this.#sources.push(source);
+		source.buffer = await this.#audioContext.decodeAudioData(data.arrayBuffer);
+		source.connect(this.#audioContext.destination);
+        source.start(0);
+		await this.#audioContext.resume();
+		this.status = 'playing';
 	}
 
 	pause() {
-		if (!this.#audio || this.status !== 'playing') return;
-		this.#audio.pause();
 		this.status = 'paused';
 	}
 
 	async resume() {
-		if (!this.#audio || this.surahNumber === null) return;
-		if (this.status === 'paused') {
-			await this.#audio.play();
-			this.status = 'playing';
-		} else if (this.status === 'idle') {
-			await this.play(this.surahNumber, Math.max(this.verse, 1));
-		}
+		if (!this.#audioContext) return;
+		await this.#audioContext.resume();
+		// if (this.status === 'paused') {
+		// 	await this.#audio.play();
+		// 	this.status = 'playing';
+		// } else if (this.status === 'idle') {
+		// 	await this.play(this.surahNumber, Math.max(this.verse, 1));
+		// }
 	}
 
 	toggle() {
@@ -78,58 +60,11 @@ class Player {
 		else void this.resume();
 	}
 
-	async next(auto = false) {
-		const position = await this.#position(1);
-		if (!position) return this.stop();
-		if (auto && !settings.autoContinue && position.surah !== this.surahNumber) return this.stop();
-		await this.play(position.surah, position.verse);
-	}
+	async next() {}
 
-	async previous() {
-		const position = await this.#position(-1);
-		if (position) await this.play(position.surah, position.verse);
-	}
+	async previous() {}
 
-	stop() {
-		this.#token++;
-		this.#audio?.pause();
-		this.#releaseObjectUrl();
-		this.surahNumber = null;
-		this.verse = 0;
-		this.status = 'idle';
-		this.error = null;
-	}
-
-	// Position after (step = 1) or before (step = -1) the current verse, crossing surah boundaries.
-	async #position(step: 1 | -1) {
-		if (this.surahNumber === null) return null;
-		const surahs = await loadQuran();
-		const surah = surahs[this.surahNumber - 1];
-		const nextVerse = this.verse + step;
-
-		if (nextVerse >= 1 && nextVerse <= surah.verses.length) {
-			return { surah: surah.number, verse: nextVerse };
-		}
-		const targetSurah = surah.number + step;
-		if (targetSurah < 1 || targetSurah > SURAH_COUNT) return null;
-		const target = surahs[targetSurah - 1];
-		return { surah: target.number, verse: step === 1 ? 1 : target.verses.length };
-	}
-
-	async #prefetchNext() {
-		const position = await this.#position(1);
-		if (!position) return;
-		cacheVerseAudio(verseAudioUrl(settings.reciter, position.surah, position.verse)).catch(
-			() => {}
-		);
-	}
-
-	#releaseObjectUrl() {
-		if (this.#objectUrl) {
-			URL.revokeObjectURL(this.#objectUrl);
-			this.#objectUrl = null;
-		}
-	}
+	stop() {}
 }
 
 export const player = new Player();
