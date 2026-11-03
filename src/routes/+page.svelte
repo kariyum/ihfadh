@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Quran from '#lib/components/Quran.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();

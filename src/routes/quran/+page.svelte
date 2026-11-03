@@ -127,7 +127,9 @@
 <div class="container" bind:this={containerElement}>
 	{#each pages as svgContent, index (index)}
 		<div class="page" {@attach onScollIntoView(index)} bind:this={pageElements[index]}>
-			<QuranPage {svgContent} applyResizing={index == 0 || index == 1}></QuranPage>
+			{#if svgContent && svgContent.length}
+				<QuranPage {svgContent} applyResizing={index == 0 || index == 1}></QuranPage>
+			{/if}
 		</div>
 	{/each}
 </div>

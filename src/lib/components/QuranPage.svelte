@@ -30,15 +30,13 @@
 
 <script lang="ts">
 	import { player } from '#lib/quran/player.svelte.ts';
+	import { onMount } from 'svelte';
 
 	let { svgContent, applyResizing }: { svgContent: string; applyResizing: boolean } = $props();
 
 	let container: HTMLDivElement;
-
-	$effect(() => {
-		svgContent;
-
-		if (!container) return;
+	onMount(() => {
+		if (!svgContent || !container) return;
 		const svgElement = container.querySelector('svg');
 		if (!svgElement) return;
 		if (applyResizing) resizeSVG(svgElement);
@@ -57,6 +55,7 @@
 			});
 		}
 	});
+
 </script>
 
 <div class="svg" bind:this={container}>
