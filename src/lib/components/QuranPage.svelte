@@ -4,12 +4,7 @@
 		ayah: Number(p.getAttribute('ayah')),
 		el: p
 	});
-	const highlight = (el: SVGPathElement) => {
-		el.setAttribute('fill-opacity', '0.15');
-	};
-	const dim = (el: SVGPathElement) => {
-		el.setAttribute('fill-opacity', '0');
-	};
+
 	function resizeSVG(svgElement: SVGSVGElement) {
 		try {
 			const b = svgElement.getBBox();
@@ -24,15 +19,17 @@
 			/* keep the declared viewBox */
 		}
 	}
-
-	let selectedAyah: { ayah: number; surah: number; el: SVGGeometryElement } | undefined = $state();
 </script>
 
 <script lang="ts">
-	import { player } from '#lib/quran/player.svelte.ts';
+	import type { Player } from '#lib/quran/player.svelte.ts';
 	import { onMount } from 'svelte';
 
-	let { svgContent, applyResizing }: { svgContent: string; applyResizing: boolean } = $props();
+	let {
+		svgContent,
+		applyResizing,
+		player
+	}: { svgContent: string; applyResizing: boolean; player: Player } = $props();
 
 	let container: HTMLDivElement;
 	onMount(() => {
@@ -44,18 +41,26 @@
 		const pathElements = svgElement.querySelectorAll<SVGPathElement>('.ayahPolygon');
 		const parsedPathElements = Array.from(pathElements).map(parseSVGPathElement);
 		for (const { surah, ayah, el } of parsedPathElements) {
-			el.style.cursor = 'pointer';
-			el.setAttribute('fill', '#F9F05F');
+		    // instead of onNext we can store the elements in a hashmap keyed by ayah index
+			// and highlight, dim ayah on next 
+			player.onNext((currentAyahIndex) => {
+				const isPressed =
+					currentAyahIndex &&
+					surah == currentAyahIndex.surahIndex &&
+					currentAyahIndex.index == ayah;
+				console.log(
+					`isPressed ${isPressed} ${currentAyahIndex?.index} ${currentAyahIndex?.surahIndex}`
+				);
+				el.setAttribute('aria-pressed', isPressed ? 'true' : 'false');
+			});
 			el.addEventListener('click', () => {
-				console.log(surah, ayah);
-				player.play(surah, ayah);
-				if (selectedAyah) dim(selectedAyah.el);
-				selectedAyah = { surah, ayah, el };
-				highlight(el);
+				player.play({
+					surahIndex: surah,
+					index: ayah
+				});
 			});
 		}
 	});
-
 </script>
 
 <div class="svg" bind:this={container}>
@@ -63,6 +68,14 @@
 </div>
 
 <style>
+	:global(.ayahPolygon) {
+		cursor: pointer;
+		fill: #f9f05f;
+		fill-opacity: 0;
+	}
+	:global(.ayahPolygon[aria-pressed='true']) {
+		fill-opacity: 0.15;
+	}
 	.svg {
 		width: 100%;
 		height: auto;

@@ -1,4 +1,4 @@
-import type { Reciter } from './types';
+import type { Ayah, Reciter } from './types';
 
 // Verse audio comes from everyayah.com, which allows cross-origin requests.
 // Each file is stored in the Cache API the first time it is fetched.
@@ -6,8 +6,8 @@ const CACHE_NAME = 'quran-audio-v1';
 
 const pad = (n: number) => String(n).padStart(3, '0');
 
-export function verseAudioUrl(reciter: Reciter, surah: number, verse: number) {
-	return `https://everyayah.com/data/${reciter.folder}/${pad(surah)}${pad(verse)}.mp3`;
+export function verseAudioUrl(reciter: Reciter, index: Ayah) {
+	return `https://everyayah.com/data/${reciter.folder}/${pad(index.surahIndex)}${pad(index.index)}.mp3`;
 }
 
 function hasCacheApi() {
@@ -28,11 +28,9 @@ async function fetchVerseAudio(url: string): Promise<ArrayBuffer> {
 }
 
 // Returns a URL that an <audio> element can play. Object URLs must be revoked by the caller.
-export async function getVerseAudioSource(
-	url: string
-): Promise<{ arrayBuffer: ArrayBuffer }> {
+export async function getVerseAudioSource(url: string): Promise<{ arrayBuffer: ArrayBuffer }> {
 	const arrayBuffer = await fetchVerseAudio(url);
-    return { arrayBuffer };
+	return { arrayBuffer };
 }
 
 export async function cacheVerseAudio(url: string) {
@@ -46,7 +44,7 @@ export async function downloadSurahAudio(
 	onProgress: (fraction: number) => void
 ) {
 	for (let verse = 1; verse <= verseCount; verse++) {
-		await cacheVerseAudio(verseAudioUrl(reciter, surah, verse));
+		await cacheVerseAudio(verseAudioUrl(reciter, { surahIndex: surah, index: verse }));
 		onProgress(verse / verseCount);
 	}
 }
@@ -55,7 +53,8 @@ export async function isSurahDownloaded(reciter: Reciter, surah: number, verseCo
 	if (!hasCacheApi()) return false;
 	const cache = await caches.open(CACHE_NAME);
 	for (let verse = 1; verse <= verseCount; verse++) {
-		if (!(await cache.match(verseAudioUrl(reciter, surah, verse)))) return false;
+		if (!(await cache.match(verseAudioUrl(reciter, { surahIndex: surah, index: verse }))))
+			return false;
 	}
 	return true;
 }

@@ -1,71 +1,84 @@
 import { browser } from '$app/env';
 import { settings } from '#lib/stores/settings.svelte.js';
 import { cacheVerseAudio, getVerseAudioSource, verseAudioUrl } from './audio';
+import type { QuranIndexKeeper } from './quran';
+import type { Ayah } from './types';
 
 export type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused';
 
-const SURAH_COUNT = 114;
-
-class Player {
-	surahNumber = $state<number | null>(null);
-	verse = $state<number | null>(null);
-	status = $state<PlayerStatus>('idle');
+export class Player {
 	error = $state<string | null>(null);
+	status = $state<PlayerStatus>('idle');
+
+	currentAyah = $state<Ayah | null>(null);
+	#startAyah = $state<Ayah | null>(null);
 
 	#audioContext: AudioContext | null = null;
 	#sources: AudioBufferSourceNode[] = [];
 	#scheduledEndTime: number = 0;
+	#quranIndexKeeper: QuranIndexKeeper;
 	#loopPromise: Promise<void> | null = null;
+	#ayahToSchedule: Ayah | null = null;
+	#onNextHandlers: ((ayah: Ayah | null) => void)[] = [];
 
-	constructor() {
+	constructor(quranIndexKeeper: QuranIndexKeeper) {
+		this.#quranIndexKeeper = quranIndexKeeper;
 		if (browser) {
 			this.#audioContext = new AudioContext();
 		}
 	}
 
-	// update: add surah, version tuple class wrapper for easy access with .next()
-	async play(startSurah: number, startVerse: number) {
+	async play(ayah: Ayah) {
 		if (!this.#audioContext) return;
 
-		this.surahNumber = startSurah;
-		this.verse = startVerse;
+		this.#startAyah = ayah;
+		this.currentAyah = ayah;
+		this.#ayahToSchedule = ayah;
+
 		this.status = 'loading';
 		this.error = null;
 		this.#scheduledEndTime = 0;
 
-		this.playLoop(startSurah, startVerse);
+		this.playLoop();
 
 		await this.#audioContext.resume();
 		this.status = 'playing';
 	}
 
-	private async schedule(startSurah: number, startVerse: number) {
-		if (!this.#audioContext) return;
-		const url = verseAudioUrl(settings.reciter, startSurah, startVerse);
-		const data = await getVerseAudioSource(url);
+	private async schedule() {
+		if (!this.#audioContext || !this.#ayahToSchedule) return;
+		const data = await getVerseAudioSource(verseAudioUrl(settings.reciter, this.#ayahToSchedule));
 		const source = this.#audioContext.createBufferSource();
 		this.#sources.push(source);
+		source.onended = () => this.onVerseEnd();
 		source.buffer = await this.#audioContext.decodeAudioData(data.arrayBuffer);
 		source.connect(this.#audioContext.destination);
-		const now = this.#audioContext.currentTime;
-		const startTime = Math.max(now, this.#scheduledEndTime);
-		console.log(
-			`Scheduled ${startSurah} ${startVerse} at ${startTime} for ${source.buffer.duration}`
-		);
+		const startTime = Math.max(this.#audioContext.currentTime, this.#scheduledEndTime);
 		source.start(startTime);
 		this.#scheduledEndTime = startTime + source.buffer.duration - 0.08;
+		this.#ayahToSchedule = this.#quranIndexKeeper.next(this.#ayahToSchedule);
 	}
 
-	private async playLoop(startSurah: number, startVerse: number) {
+	private onVerseEnd() {
+		if (this.currentAyah) {
+			const nextAyah = this.#quranIndexKeeper.next(this.currentAyah);
+			if (!nextAyah) {
+				this.status = 'idle';
+			}
+			this.currentAyah = nextAyah;
+			for (const handler of this.#onNextHandlers) {
+				handler(this.currentAyah);
+			}
+		}
+	}
+
+	private async playLoop() {
 		let i = 0;
 
-		while (true) {
-			await this.schedule(startSurah, startVerse + i);
+		while (i < 10) {
+			await this.schedule();
 			i++;
 		}
-		this.#loopPromise = new Promise((resolve, reject) => {
-			resolve();
-		});
 	}
 
 	pause() {
@@ -92,7 +105,11 @@ class Player {
 
 	async previous() {}
 
+	async onNext(handler: (ayah: Ayah | null) => void) {
+		this.#onNextHandlers.push(handler);
+		return () => {
+			this.#onNextHandlers.filter((h) => h != handler);
+		};
+	}
 	stop() {}
 }
-
-export const player = new Player();

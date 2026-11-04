@@ -22,3 +22,8 @@ export type SurahIndex = {
     juzNumber: number;
     pageNumber: number
 };
+
+export type Ayah = {
+    surahIndex: number;
+    index: number;
+}

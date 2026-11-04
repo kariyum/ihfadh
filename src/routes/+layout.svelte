@@ -4,7 +4,6 @@
 	import '../app.css';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { player } from '#lib/quran/player.svelte.js';
 	import type { LayoutProps } from './$types';
 	import SurahsMenu from '#lib/components/SurahsMenu.svelte';
 	import { goto } from '$app/navigation';
@@ -12,8 +11,10 @@
 
 	let { data, children }: LayoutProps = $props();
 
+	let player = $derived(data.player);
+
 	const nowPlaying = $derived(
-		player.surahNumber === null ? null : data.surahs[player.surahNumber - 1]
+		player.currentAyah === null ? null : data.surahs[player.currentAyah.surahIndex - 1]
 	);
 </script>
 

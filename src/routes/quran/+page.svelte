@@ -5,6 +5,10 @@
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
 
+	let { data } = $props();
+
+	let player = $derived(data.player);
+
 	async function fetchQuranPage(page: number) {
 		const pageNumber = (page + 1).toString().padStart(3, '0');
 		const res = await fetch(`/hafs-svg/svg/${pageNumber}.svg`);
@@ -128,7 +132,7 @@
 	{#each pages as svgContent, index (index)}
 		<div class="page" {@attach onScollIntoView(index)} bind:this={pageElements[index]}>
 			{#if svgContent && svgContent.length}
-				<QuranPage {svgContent} applyResizing={index == 0 || index == 1}></QuranPage>
+				<QuranPage {svgContent} applyResizing={index == 0 || index == 1} {player}></QuranPage>
 			{/if}
 		</div>
 	{/each}
