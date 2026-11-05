@@ -23,6 +23,7 @@
 
 <script lang="ts">
 	import type { Player } from '#lib/quran/player.svelte.ts';
+	import type { Ayah } from '#lib/quran/types.ts';
 	import { onMount } from 'svelte';
 
 	let {
@@ -32,6 +33,9 @@
 	}: { svgContent: string; applyResizing: boolean; player: Player } = $props();
 
 	let container: HTMLDivElement;
+	let ayahSvg: Map<string, SVGPathElement> = new Map();
+
+	const ayahKey = (ayah: Ayah) => `${ayah.surahIndex}-${ayah.index}`;
 	onMount(() => {
 		if (!svgContent || !container) return;
 		const svgElement = container.querySelector('svg');
@@ -40,19 +44,14 @@
 
 		const pathElements = svgElement.querySelectorAll<SVGPathElement>('.ayahPolygon');
 		const parsedPathElements = Array.from(pathElements).map(parseSVGPathElement);
+
+		player.onRecite((previousAyah, nextAyah) => {
+			if (previousAyah) ayahSvg.get(ayahKey(previousAyah))?.setAttribute('aria-pressed', 'false');
+			if (nextAyah) ayahSvg.get(ayahKey(nextAyah))?.setAttribute('aria-pressed', 'true');
+		});
+
 		for (const { surah, ayah, el } of parsedPathElements) {
-		    // instead of onNext we can store the elements in a hashmap keyed by ayah index
-			// and highlight, dim ayah on next 
-			player.onNext((currentAyahIndex) => {
-				const isPressed =
-					currentAyahIndex &&
-					surah == currentAyahIndex.surahIndex &&
-					currentAyahIndex.index == ayah;
-				console.log(
-					`isPressed ${isPressed} ${currentAyahIndex?.index} ${currentAyahIndex?.surahIndex}`
-				);
-				el.setAttribute('aria-pressed', isPressed ? 'true' : 'false');
-			});
+			ayahSvg.set(ayahKey({ surahIndex: surah, index: ayah }), el);
 			el.addEventListener('click', () => {
 				player.play({
 					surahIndex: surah,

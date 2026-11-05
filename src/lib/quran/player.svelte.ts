@@ -19,7 +19,7 @@ export class Player {
 	#quranIndexKeeper: QuranIndexKeeper;
 	#loopPromise: Promise<void> | null = null;
 	#ayahToSchedule: Ayah | null = null;
-	#onNextHandlers: ((ayah: Ayah | null) => void)[] = [];
+	#onReciteHandlers: ((previous: Ayah | null, next: Ayah | null) => void)[] = [];
 
 	constructor(quranIndexKeeper: QuranIndexKeeper) {
 		this.#quranIndexKeeper = quranIndexKeeper;
@@ -39,10 +39,17 @@ export class Player {
 		this.error = null;
 		this.#scheduledEndTime = 0;
 
+		this.notifyOnRecite(null, this.currentAyah);
 		this.playLoop();
 
 		await this.#audioContext.resume();
 		this.status = 'playing';
+	}
+
+	private notifyOnRecite(currentAyah: Ayah | null, nextAyah: Ayah | null) {
+		for (const handler of this.#onReciteHandlers) {
+			handler(currentAyah, nextAyah);
+		}
 	}
 
 	private async schedule() {
@@ -65,10 +72,9 @@ export class Player {
 			if (!nextAyah) {
 				this.status = 'idle';
 			}
+
+			this.notifyOnRecite(this.currentAyah, nextAyah);
 			this.currentAyah = nextAyah;
-			for (const handler of this.#onNextHandlers) {
-				handler(this.currentAyah);
-			}
 		}
 	}
 
@@ -105,10 +111,10 @@ export class Player {
 
 	async previous() {}
 
-	async onNext(handler: (ayah: Ayah | null) => void) {
-		this.#onNextHandlers.push(handler);
+	async onRecite(handler: (previous: Ayah | null, next: Ayah | null) => void) {
+		this.#onReciteHandlers.push(handler);
 		return () => {
-			this.#onNextHandlers.filter((h) => h != handler);
+			this.#onReciteHandlers.filter((h) => h != handler);
 		};
 	}
 	stop() {}
