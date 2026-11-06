@@ -15,15 +15,16 @@ function hasCacheApi() {
 }
 
 async function fetchVerseAudio(url: string): Promise<ArrayBuffer> {
-	const cache = await caches.open(CACHE_NAME);
-	const cached = await cache.match(url);
-	if (cached) return cached.arrayBuffer();
+	const cache = hasCacheApi() ? await caches.open(CACHE_NAME) : null;
+	if (cache) {
+		const cached = await cache.match(url);
+		if (cached) return cached.arrayBuffer();
+	}
 
 	const response = await fetch(url);
-	console.log(response.ok);
 	if (!response.ok) throw new Error(`Audio request failed (${response.status})`);
 
-	await cache.put(url, response.clone());
+	await cache?.put(url, response.clone());
 	return response.arrayBuffer();
 }
 

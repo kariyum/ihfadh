@@ -12,7 +12,7 @@ export class QuranIndexKeeper {
 	}
 
 	next(ayahIndex: Ayah): Ayah | null {
-		const atEndOfSurah = ayahIndex.index == this.#ayahCounts[ayahIndex.index];
+		const atEndOfSurah = ayahIndex.index == this.#ayahCounts[ayahIndex.surahIndex - 1];
 		if (!atEndOfSurah) {
 			return {
 				index: ayahIndex.index + 1,
@@ -37,7 +37,7 @@ export class QuranIndexKeeper {
 		} else if (ayahIndex.surahIndex > 1) {
 			const previousSurah = ayahIndex.surahIndex - 1;
 			return {
-				index: this.#ayahCounts[previousSurah],
+				index: this.#ayahCounts[previousSurah - 1],
 				surahIndex: previousSurah
 			};
 		}

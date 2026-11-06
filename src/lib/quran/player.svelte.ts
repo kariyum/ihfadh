@@ -20,6 +20,7 @@ export class Player {
 	#loopPromise: Promise<void> | null = null;
 	#ayahToSchedule: Ayah | null = null;
 	#onReciteHandlers: ((previous: Ayah | null, next: Ayah | null) => void)[] = [];
+	#ayahBufferCount: number = 0;
 
 	constructor(quranIndexKeeper: QuranIndexKeeper) {
 		this.#quranIndexKeeper = quranIndexKeeper;
@@ -30,6 +31,9 @@ export class Player {
 
 	async play(ayah: Ayah) {
 		if (!this.#audioContext) return;
+		if (this.status == 'playing') {
+			return;
+		}
 
 		this.#startAyah = ayah;
 		this.currentAyah = ayah;
@@ -64,6 +68,7 @@ export class Player {
 		source.start(startTime);
 		this.#scheduledEndTime = startTime + source.buffer.duration - 0.08;
 		this.#ayahToSchedule = this.#quranIndexKeeper.next(this.#ayahToSchedule);
+		this.#ayahBufferCount += 1;
 	}
 
 	private onVerseEnd() {
@@ -75,31 +80,28 @@ export class Player {
 
 			this.notifyOnRecite(this.currentAyah, nextAyah);
 			this.currentAyah = nextAyah;
+			this.#ayahBufferCount -= 1;
 		}
 	}
 
 	private async playLoop() {
-		let i = 0;
-
-		while (i < 10) {
-			await this.schedule();
-			i++;
-		}
+		setTimeout(async () => {
+			if (this.#ayahBufferCount < 5) {
+				await this.schedule();
+			}
+			this.playLoop();
+		}, 500);
 	}
 
-	pause() {
+	async pause() {
+		await this.#audioContext?.suspend();
 		this.status = 'paused';
 	}
 
 	async resume() {
-		if (!this.#audioContext) return;
-		await this.#audioContext.resume();
-		// if (this.status === 'paused') {
-		// 	await this.#audio.play();
-		// 	this.status = 'playing';
-		// } else if (this.status === 'idle') {
-		// 	await this.play(this.surahNumber, Math.max(this.verse, 1));
-		// }
+		this.status = 'loading';
+		await this.#audioContext?.resume();
+		this.status = 'playing';
 	}
 
 	toggle() {

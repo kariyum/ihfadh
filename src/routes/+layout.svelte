@@ -53,31 +53,31 @@
 	{@render children()}
 </main>
 
-<aside class="player" aria-label="Audio player">
-	<!-- <a class="player-info" href={resolve('/surah/[number]', { number: String(nowPlaying.number) })}>
+{#if nowPlaying}
+	<aside class="player" aria-label="Audio player">
+		<!-- <a class="player-info" href={resolve('/surah/[number]', { number: String(nowPlaying.number) })}>
 		<strong>{nowPlaying.name}</strong>
 		<span class="muted">Verse {player.verse} of {nowPlaying.verses.length}</span>
 	</a> -->
-	<div class="player-controls">
-		<button class="btn icon" onclick={() => player.previous()} aria-label="Previous verse">⏮</button
-		>
-		<button
-			class="btn icon primary"
-			onclick={() => player.toggle()}
-			aria-label={player.status === 'playing' ? 'Pause' : 'Play'}
-			disabled={player.status === 'loading'}
-		>
-			{player.status === 'playing' ? '⏸' : '▶'}
-		</button>
-		<button class="btn icon" onclick={() => player.next()} aria-label="Next verse">⏭</button>
-		<button class="btn icon" onclick={() => player.stop()} aria-label="Stop">⏹</button>
-	</div>
-	{#if player.error}
-		<p class="player-error" role="alert">{player.error}</p>
-	{/if}
-</aside>
-{#if nowPlaying}
-
+		<div class="player-controls">
+			<button class="btn icon" onclick={() => player.previous()} aria-label="Previous verse"
+				>⏮</button
+			>
+			<button
+				class="btn icon primary"
+				onclick={() => player.toggle()}
+				aria-label={player.status === 'playing' ? 'Pause' : 'Play'}
+				disabled={player.status === 'loading'}
+			>
+				{player.status === 'playing' ? '⏸' : '▶'}
+			</button>
+			<button class="btn icon" onclick={() => player.next()} aria-label="Next verse">⏭</button>
+			<button class="btn icon" onclick={() => player.stop()} aria-label="Stop">⏹</button>
+		</div>
+		{#if player.error}
+			<p class="player-error" role="alert">{player.error}</p>
+		{/if}
+	</aside>
 {/if}
 
 <style>
