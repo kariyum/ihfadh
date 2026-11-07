@@ -6,15 +6,14 @@
 	import { page } from '$app/state';
 	import type { LayoutProps } from './$types';
 	import SurahsMenu from '#lib/components/SurahsMenu.svelte';
+	import { player } from '#lib/quran/data.js';
 	import { goto } from '$app/navigation';
 	import { Menu, Pause, Play, SkipBack, SkipForward, Square } from '@lucide/svelte';
 
-	let { data, children }: LayoutProps = $props();
-
-	let player = $derived(data.player);
+	let { children }: LayoutProps = $props();
 
 	const nowPlaying = $derived(
-		player.currentAyah === null ? null : data.surahs[player.currentAyah.surahIndex - 1]
+		player.status === 'playing' || player.status === 'paused' || player.status == 'loading'
 	);
 </script>
 
@@ -46,7 +45,7 @@
 </header>
 
 <div class="surah-menu" style:--show={page.state.showSurahPicker ? 'block' : 'none'}>
-	<SurahsMenu surahs={data.surahs}></SurahsMenu>
+	<SurahsMenu></SurahsMenu>
 </div>
 
 <main>
@@ -67,9 +66,9 @@
 				disabled={player.status === 'loading'}
 			>
 				{#if player.status == 'playing'}
-					<Pause  />
+					<Pause />
 				{:else}
-					<Play  />
+					<Play />
 				{/if}
 			</button>
 			<button class="btn icon" onclick={() => player.next()} aria-label="Next verse">
@@ -112,12 +111,10 @@
 	}
 
 	.brand {
-		display: flex;
-		align-items: baseline;
-		gap: 0.5rem;
 		font-weight: 600;
 		color: var(--text);
-		text-decoration: none;
+		line-height: 0;
+		margin-bottom: 0.3rem;
 	}
 
 	.brand .arabic {
@@ -141,11 +138,10 @@
 	}
 
 	main {
-		max-width: 760px;
 		margin: 0 auto;
 		height: 100dvh;
-		padding: 1.25rem 0.2rem;
-		padding-top: 4rem;
+		padding: 1rem 0.2rem;
+		padding-top: 3.25rem;
 		overflow-y: hidden;
 	}
 
@@ -161,6 +157,11 @@
 		border-top: 1px solid var(--border);
 		box-shadow: 0 -4px 16px rgb(0 0 0 / 0.06);
 		padding: 0.4rem 0;
+	}
+
+	.player-controls {
+		display: flex;
+		gap: 1rem;
 	}
 
 	.player-error {

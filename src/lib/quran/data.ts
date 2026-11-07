@@ -1,17 +1,9 @@
-import { asset } from '$app/paths';
+import { Player } from './player.svelte.ts';
+import { QuranIndexKeeper } from './quran.ts';
+import surahsData from './surah.json';
 import type { SurahIndex } from './types';
 
-let surahsIndex: Promise<SurahIndex[]> | null = null;
+export const surahs: SurahIndex[] = surahsData;
+export const quranIndexKeeper = new QuranIndexKeeper(surahs);
+export const player = new Player(quranIndexKeeper);
 
-export function loadSurahs(fetcher: typeof fetch = fetch): Promise<SurahIndex[]> {
-	surahsIndex ??= fetcher(asset('data/surah.json'))
-		.then((res) => {
-			if (!res.ok) throw new Error(`Failed to load Surah data (${res.status})`);
-			return res.json() as Promise<SurahIndex[]>;
-		})
-		.catch((error) => {
-			surahsIndex = null;
-			throw error;
-		});
-	return surahsIndex;
-}

@@ -1,8 +1,7 @@
 <script lang="ts">
-	import type { SurahIndex } from '#lib/quran/types.ts';
+	import { surahs } from '#lib/quran/data.js';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-
-	let { surahs }: { surahs: SurahIndex[] } = $props();
 
 	let query = $state('');
 
@@ -27,6 +26,10 @@
 				<a
 					style="direction:rtl;"
 					href={resolve(`/quran?page=${surah.pageNumber}`)}
+					onclick={(e) => {
+						e.preventDefault();
+						goto(resolve(`/quran?page=${surah.pageNumber}`));
+					}}
 				>
 					<span class="arabic name-ar">{surah.nameArabic}</span>
 				</a>

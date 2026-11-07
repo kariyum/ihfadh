@@ -22,15 +22,14 @@
 </script>
 
 <script lang="ts">
-	import type { Player } from '#lib/quran/player.svelte.ts';
+	import { player } from '#lib/quran/data.js';
 	import type { Ayah } from '#lib/quran/types.ts';
 	import { onMount } from 'svelte';
 
 	let {
 		svgContent,
-		applyResizing,
-		player
-	}: { svgContent: string; applyResizing: boolean; player: Player } = $props();
+		applyResizing
+	}: { svgContent: string; applyResizing: boolean } = $props();
 
 	let container: HTMLDivElement;
 	let ayahSvg: Map<string, SVGPathElement> = new Map();
