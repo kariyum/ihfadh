@@ -7,7 +7,7 @@
 	import type { LayoutProps } from './$types';
 	import SurahsMenu from '#lib/components/SurahsMenu.svelte';
 	import { goto } from '$app/navigation';
-	import { Menu } from '@lucide/svelte';
+	import { Menu, Pause, Play, SkipBack, SkipForward, Square } from '@lucide/svelte';
 
 	let { data, children }: LayoutProps = $props();
 
@@ -55,24 +55,31 @@
 
 {#if nowPlaying}
 	<aside class="player" aria-label="Audio player">
-		<!-- <a class="player-info" href={resolve('/surah/[number]', { number: String(nowPlaying.number) })}>
-		<strong>{nowPlaying.name}</strong>
-		<span class="muted">Verse {player.verse} of {nowPlaying.verses.length}</span>
-	</a> -->
+		<div></div>
 		<div class="player-controls">
-			<button class="btn icon" onclick={() => player.previous()} aria-label="Previous verse"
-				>⏮</button
-			>
+			<button class="btn icon" onclick={() => player.previous()} aria-label="Previous verse">
+				<SkipBack />
+			</button>
 			<button
 				class="btn icon primary"
 				onclick={() => player.toggle()}
 				aria-label={player.status === 'playing' ? 'Pause' : 'Play'}
 				disabled={player.status === 'loading'}
 			>
-				{player.status === 'playing' ? '⏸' : '▶'}
+				{#if player.status == 'playing'}
+					<Pause  />
+				{:else}
+					<Play  />
+				{/if}
 			</button>
-			<button class="btn icon" onclick={() => player.next()} aria-label="Next verse">⏭</button>
-			<button class="btn icon" onclick={() => player.stop()} aria-label="Stop">⏹</button>
+			<button class="btn icon" onclick={() => player.next()} aria-label="Next verse">
+				<SkipForward />
+			</button>
+		</div>
+		<div>
+			<button class="btn icon" onclick={() => player.stop()} aria-label="Stop">
+				<Square />
+			</button>
 		</div>
 		{#if player.error}
 			<p class="player-error" role="alert">{player.error}</p>
@@ -147,27 +154,13 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		padding: 0.75rem 1.25rem;
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		gap: 0.4rem;
 		background: var(--surface);
 		border-top: 1px solid var(--border);
 		box-shadow: 0 -4px 16px rgb(0 0 0 / 0.06);
-	}
-
-	.player-info {
-		display: flex;
-		flex-direction: column;
-		text-decoration: none;
-		color: var(--text);
-	}
-
-	.player-controls {
-		display: flex;
-		gap: 0.4rem;
+		padding: 0.4rem 0;
 	}
 
 	.player-error {

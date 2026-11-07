@@ -1,6 +1,6 @@
 import { browser } from '$app/env';
 import { settings } from '#lib/stores/settings.svelte.js';
-import { cacheVerseAudio, getVerseAudioSource, verseAudioUrl } from './audio';
+import { getVerseAudioSource, verseAudioUrl } from './audio';
 import type { QuranIndexKeeper } from './quran';
 import type { Ayah } from './types';
 

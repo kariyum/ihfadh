@@ -98,7 +98,19 @@ button {
 }
 
 .btn.icon {
-	padding: 0.5rem 0.75rem;
+	margin: 0;
+	padding: 0;
+	width: 2.5rem;
+	aspect-ratio: 1;
+	position: relative;
+	display: flex nowrap;
+	align-items: center;
+	justify-content: center;
+
+	> svg {
+		fill: currentColor;
+		scale: 0.9;
+	}
 }
 
 #ayah_markers {
