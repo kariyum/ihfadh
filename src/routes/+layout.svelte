@@ -2,7 +2,7 @@
 	import favicon from '#lib/assets/favicon.svg';
 	import '@fontsource/amiri-quran/arabic-400.css';
 	import '../app.css';
-	import { resolve } from '$app/paths';
+	import { asset, resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { LayoutProps } from './$types';
 	import SurahsMenu from '#lib/components/SurahsMenu.svelte';
@@ -20,7 +20,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<link rel="manifest" href="/manifest.webmanifest" />
+	<link rel="manifest" href={asset('/manifest.webmanifest')} />
 	<meta name="theme-color" content="#1d5c48" />
 </svelte:head>
 

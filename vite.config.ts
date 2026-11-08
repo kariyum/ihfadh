@@ -14,7 +14,10 @@ export default defineConfig({
 
 			// Static SPA: every route is rendered in the browser and the service worker serves
 			// the app offline. The fallback page handles all dynamic routes.
-			adapter: adapter({ fallback: 'index.html' })
+			adapter: adapter({ fallback: '404.html' }),
+
+			// GitHub Pages serves the site from /<repo-name>; the deploy workflow sets BASE_PATH.
+			paths: { base: process.env.BASE_PATH ?? '' }
 		})
 	],
 	test: {

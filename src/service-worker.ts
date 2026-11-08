@@ -5,13 +5,17 @@ import { assets, immutable, prerendered } from '$app/manifest';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
+// The app may be served from a sub-path (GitHub Pages), so derive the base from the SW scope.
+const base = new URL(sw.registration.scope).pathname.replace(/\/$/, '');
+const FALLBACK = `${base}/404.html`;
+
 const SHELL_CACHE = `ayah-shell-${version}`;
 const AUDIO_CACHE = 'quran-audio-v1';
 const SHELL_ASSETS = [
-	'/index.html',
-	...immutable.map((file) => `/${file.path}`),
-	...prerendered.map((page) => `/${page.path}`),
-	...assets.map((file) => `/${file.path}`)
+	FALLBACK,
+	...immutable.map((file) => `${base}/${file.path}`),
+	...prerendered.map((page) => `${base}/${page.path}`),
+	...assets.map((file) => `${base}/${file.path}`)
 ];
 const SHELL_SET = new Set(SHELL_ASSETS);
 
@@ -48,7 +52,7 @@ sw.addEventListener('fetch', (event) => {
 
 	// Every route is client-rendered. Use the network when online, and fall back to the cached shell offline.
 	if (request.mode === 'navigate') {
-		event.respondWith(fetch(request).catch(() => caches.match('/index.html') as Promise<Response>));
+		event.respondWith(fetch(request).catch(() => caches.match(FALLBACK) as Promise<Response>));
 		return;
 	}
 

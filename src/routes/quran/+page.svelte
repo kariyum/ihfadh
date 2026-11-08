@@ -1,13 +1,13 @@
 <script lang="ts">
 	import QuranPage from '#lib/components/QuranPage.svelte';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
+	import { asset, resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
 
 	async function fetchQuranPage(page: number) {
 		const pageNumber = (page + 1).toString().padStart(3, '0');
-		const res = await fetch(`/hafs-svg/svg/${pageNumber}.svg`);
+		const res = await fetch(asset(`/hafs-svg/svg/${pageNumber}.svg` as Parameters<typeof asset>[0]));
 
 		if (!res.ok) {
 			console.error(`SVG icon "${pageNumber}" not found`);
