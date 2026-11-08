@@ -1,4 +1,6 @@
-<script module>
+<script module lang="ts">
+	import type { Ayah } from '#lib/quran/types.ts';
+
 	const parseSVGPathElement = (p: SVGPathElement) => ({
 		surah: Number(p.getAttribute('surah')),
 		ayah: Number(p.getAttribute('ayah')),
@@ -19,11 +21,20 @@
 			/* keep the declared viewBox */
 		}
 	}
+
+	const ayahKey = (ayah: Ayah) => `${ayah.surahIndex}-${ayah.index}`;
+
+	function highlightAyah(ayahSvg: Map<string, SVGPathElement>, ayah: Ayah | null) {
+		if (ayah) ayahSvg.get(ayahKey(ayah))?.setAttribute('aria-pressed', 'true');
+	}
+
+	function dimAyah(ayahSvg: Map<string, SVGPathElement>, ayah: Ayah | null) {
+		if (ayah) ayahSvg.get(ayahKey(ayah))?.setAttribute('aria-pressed', 'false');
+	}
 </script>
 
 <script lang="ts">
 	import { player } from '#lib/quran/data.js';
-	import type { Ayah } from '#lib/quran/types.ts';
 	import { onMount } from 'svelte';
 
 	let {
@@ -34,7 +45,6 @@
 	let container: HTMLDivElement;
 	let ayahSvg: Map<string, SVGPathElement> = new Map();
 
-	const ayahKey = (ayah: Ayah) => `${ayah.surahIndex}-${ayah.index}`;
 	onMount(() => {
 		if (!svgContent || !container) return;
 		const svgElement = container.querySelector('svg');
@@ -44,9 +54,9 @@
 		const pathElements = svgElement.querySelectorAll<SVGPathElement>('.ayahPolygon');
 		const parsedPathElements = Array.from(pathElements).map(parseSVGPathElement);
 
-		player.onRecite((previousAyah, nextAyah) => {
-			if (previousAyah) ayahSvg.get(ayahKey(previousAyah))?.setAttribute('aria-pressed', 'false');
-			if (nextAyah) ayahSvg.get(ayahKey(nextAyah))?.setAttribute('aria-pressed', 'true');
+		const unsubscribe = player.onRecite((previousAyah, nextAyah) => {
+			dimAyah(ayahSvg, previousAyah);
+			highlightAyah(ayahSvg, nextAyah);
 		});
 
 		for (const { surah, ayah, el } of parsedPathElements) {
@@ -58,6 +68,10 @@
 				});
 			});
 		}
+
+		highlightAyah(ayahSvg, player.currentAyah);
+
+		return unsubscribe;
 	});
 </script>
 

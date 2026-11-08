@@ -21,6 +21,9 @@ export class Player {
 	#ayahToSchedule: Ayah | null = null;
 	#onReciteHandlers: ((previous: Ayah | null, next: Ayah | null) => void)[] = [];
 	#ayahBufferCount: number = 0;
+	#cancelScheduleTimeout: () => void = () => {};
+	#state: number = 0;
+	#schedulePromise: Promise<void> = new Promise((resolve, reject) => resolve());
 
 	constructor(quranIndexKeeper: QuranIndexKeeper) {
 		this.#quranIndexKeeper = quranIndexKeeper;
@@ -31,10 +34,7 @@ export class Player {
 
 	async play(ayah: Ayah) {
 		if (!this.#audioContext) return;
-		if (this.status == 'playing') {
-			return;
-		}
-
+		await this.stop();
 		this.#startAyah = ayah;
 		this.currentAyah = ayah;
 		this.#ayahToSchedule = ayah;
@@ -44,7 +44,7 @@ export class Player {
 		this.#scheduledEndTime = 0;
 
 		this.notifyOnRecite(null, this.currentAyah);
-		this.playLoop();
+		this.playLoop(this.#state);
 
 		await this.#audioContext.resume();
 		this.status = 'playing';
@@ -56,19 +56,21 @@ export class Player {
 		}
 	}
 
-	private async schedule() {
+	private async schedule(state: number) {
 		if (!this.#audioContext || !this.#ayahToSchedule) return;
 		const data = await getVerseAudioSource(verseAudioUrl(settings.reciter, this.#ayahToSchedule));
 		const source = this.#audioContext.createBufferSource();
-		this.#sources.push(source);
-		source.onended = () => this.onVerseEnd();
 		source.buffer = await this.#audioContext.decodeAudioData(data.arrayBuffer);
+		source.onended = () => this.onVerseEnd();
 		source.connect(this.#audioContext.destination);
 		const startTime = Math.max(this.#audioContext.currentTime, this.#scheduledEndTime);
 		source.start(startTime);
-		this.#scheduledEndTime = startTime + source.buffer.duration - 0.08;
-		this.#ayahToSchedule = this.#quranIndexKeeper.next(this.#ayahToSchedule);
-		this.#ayahBufferCount += 1;
+		if (state == this.#state) {
+			this.#sources.push(source);
+			this.#scheduledEndTime = startTime + source.buffer.duration - 0.08;
+			this.#ayahToSchedule = this.#quranIndexKeeper.next(this.#ayahToSchedule);
+			this.#ayahBufferCount += 1;
+		}
 	}
 
 	private onVerseEnd() {
@@ -84,13 +86,15 @@ export class Player {
 		}
 	}
 
-	private async playLoop() {
-		setTimeout(async () => {
-			if (this.#ayahBufferCount < 5) {
-				await this.schedule();
+	private async playLoop(state: number) {
+		const timeoutId = setTimeout(async () => {
+			if (this.#ayahBufferCount < 5 && state == this.#state) {
+                this.#schedulePromise = this.schedule(state);
+                await this.#schedulePromise;
 			}
-			this.playLoop();
+			this.playLoop(state);
 		}, 500);
+		this.#cancelScheduleTimeout = () => clearTimeout(timeoutId);
 	}
 
 	async pause() {
@@ -113,11 +117,31 @@ export class Player {
 
 	async previous() {}
 
-	async onRecite(handler: (previous: Ayah | null, next: Ayah | null) => void) {
+	onRecite(handler: (previous: Ayah | null, next: Ayah | null) => void): () => void {
 		this.#onReciteHandlers.push(handler);
 		return () => {
-			this.#onReciteHandlers.filter((h) => h != handler);
+			this.#onReciteHandlers = this.#onReciteHandlers.filter((h) => h !== handler);
 		};
 	}
-	stop() {}
+	async stop() {
+		this.#state += 1;
+        await this.#schedulePromise;
+		this.#cancelScheduleTimeout();
+		for (const source of this.#sources) {
+			source.onended = null;
+			try {
+				source.stop();
+			} catch {
+				// Ignore if source hasn't started or already stopped
+			}
+		}
+		this.notifyOnRecite(this.currentAyah, null);
+		this.#sources = [];
+		this.#ayahBufferCount = 0;
+		this.#scheduledEndTime = 0;
+		this.#startAyah = null;
+		this.currentAyah = null;
+		this.#ayahToSchedule = null;
+        this.status = 'idle';
+	}
 }

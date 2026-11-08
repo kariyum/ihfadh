@@ -29,3 +29,6 @@ hafs-kfqc-svg/
 
 static/data
 static/hafs-svg/svg
+hafs-kfqc-json/
+__pycache__/
+main.py
