@@ -9,6 +9,7 @@
 	import { player } from '#lib/quran/data.js';
 	import { goto } from '$app/navigation';
 	import { Menu, Pause, Play, SkipBack, SkipForward, Square } from '@lucide/svelte';
+	import AyahMenu from '#lib/components/AyahMenu.svelte';
 
 	let { children }: LayoutProps = $props();
 
@@ -51,6 +52,8 @@
 <main>
 	{@render children()}
 </main>
+
+<AyahMenu></AyahMenu>
 
 {#if nowPlaying}
 	<aside aria-label="Audio player">
