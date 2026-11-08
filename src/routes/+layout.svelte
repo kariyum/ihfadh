@@ -53,32 +53,34 @@
 </main>
 
 {#if nowPlaying}
-	<aside class="player" aria-label="Audio player">
-		<div></div>
-		<div class="player-controls">
-			<button class="btn icon" onclick={() => player.previous()} aria-label="Previous verse">
-				<SkipBack />
-			</button>
-			<button
-				class="btn icon primary"
-				onclick={() => player.toggle()}
-				aria-label={player.status === 'playing' ? 'Pause' : 'Play'}
-				disabled={player.status === 'loading'}
-			>
-				{#if player.status == 'playing'}
-					<Pause />
-				{:else}
-					<Play />
-				{/if}
-			</button>
-			<button class="btn icon" onclick={() => player.next()} aria-label="Next verse">
-				<SkipForward />
-			</button>
-		</div>
-		<div>
-			<button class="btn icon" onclick={() => player.stop()} aria-label="Stop">
-				<Square />
-			</button>
+	<aside aria-label="Audio player">
+		<div class="player">
+			<div></div>
+			<div class="player-controls">
+				<button class="btn icon" onclick={() => player.previous()} aria-label="Previous verse">
+					<SkipBack />
+				</button>
+				<button
+					class="btn icon primary"
+					onclick={() => player.toggle()}
+					aria-label={player.status === 'playing' ? 'Pause' : 'Play'}
+					disabled={player.status === 'loading'}
+				>
+					{#if player.status == 'playing'}
+						<Pause />
+					{:else}
+						<Play />
+					{/if}
+				</button>
+				<button class="btn icon" onclick={() => player.next()} aria-label="Next verse">
+					<SkipForward />
+				</button>
+			</div>
+			<div>
+				<button class="btn icon" onclick={() => player.stop()} aria-label="Stop">
+					<Square />
+				</button>
+			</div>
 		</div>
 		{#if player.error}
 			<p class="player-error" role="alert">{player.error}</p>
@@ -169,6 +171,8 @@
 		margin: 0;
 		color: #b3261e;
 		font-size: 0.9rem;
+		position: fixed;
+		bottom: 0;
 	}
 
 	.muted {

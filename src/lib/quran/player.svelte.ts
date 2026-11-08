@@ -61,15 +61,16 @@ export class Player {
 		const data = await getVerseAudioSource(verseAudioUrl(settings.reciter, this.#ayahToSchedule));
 		const source = this.#audioContext.createBufferSource();
 		source.buffer = await this.#audioContext.decodeAudioData(data.arrayBuffer);
-		source.onended = () => this.onVerseEnd();
-		source.connect(this.#audioContext.destination);
-		const startTime = Math.max(this.#audioContext.currentTime, this.#scheduledEndTime);
-		source.start(startTime);
 		if (state == this.#state) {
+			source.onended = () => this.onVerseEnd();
+			source.connect(this.#audioContext.destination);
+			const startTime = Math.max(this.#audioContext.currentTime, this.#scheduledEndTime);
+			source.start(startTime);
 			this.#sources.push(source);
 			this.#scheduledEndTime = startTime + source.buffer.duration - 0.08;
 			this.#ayahToSchedule = this.#quranIndexKeeper.next(this.#ayahToSchedule);
 			this.#ayahBufferCount += 1;
+			this.error = null;
 		}
 	}
 
@@ -89,10 +90,12 @@ export class Player {
 	private async playLoop(state: number) {
 		const timeoutId = setTimeout(async () => {
 			if (this.#ayahBufferCount < 5 && state == this.#state) {
-                this.#schedulePromise = this.schedule(state);
-                await this.#schedulePromise;
+				this.#schedulePromise = this.schedule(state).catch((error) => {
+					this.error = String(error);
+				});
+				await this.#schedulePromise;
 			}
-			this.playLoop(state);
+			if (state == this.#state) this.playLoop(state);
 		}, 500);
 		this.#cancelScheduleTimeout = () => clearTimeout(timeoutId);
 	}
@@ -123,18 +126,12 @@ export class Player {
 			this.#onReciteHandlers = this.#onReciteHandlers.filter((h) => h !== handler);
 		};
 	}
-	async stop() {
+
+    async stop() {
 		this.#state += 1;
-        await this.#schedulePromise;
+		await this.#schedulePromise;
 		this.#cancelScheduleTimeout();
-		for (const source of this.#sources) {
-			source.onended = null;
-			try {
-				source.stop();
-			} catch {
-				// Ignore if source hasn't started or already stopped
-			}
-		}
+		this.stopSources();
 		this.notifyOnRecite(this.currentAyah, null);
 		this.#sources = [];
 		this.#ayahBufferCount = 0;
@@ -142,6 +139,17 @@ export class Player {
 		this.#startAyah = null;
 		this.currentAyah = null;
 		this.#ayahToSchedule = null;
-        this.status = 'idle';
+		this.status = 'idle';
+	}
+
+	private stopSources() {
+		for (const source of this.#sources) {
+			source.onended = null;
+			try {
+				source.stop();
+			} catch (error) {
+				console.error(error);
+			}
+		}
 	}
 }
