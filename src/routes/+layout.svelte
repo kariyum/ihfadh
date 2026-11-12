@@ -21,7 +21,7 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 	<link rel="manifest" href={asset('/manifest.webmanifest')} />
-	<meta name="theme-color" content="#1d5c48" />
+	<meta name="theme-color" content="#1d2226" />
 </svelte:head>
 
 <header class="topbar">
