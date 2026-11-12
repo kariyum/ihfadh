@@ -10,6 +10,10 @@
 	import { goto } from '$app/navigation';
 	import { Menu, Pause, Play, SkipBack, SkipForward, Square } from '@lucide/svelte';
 	import AyahMenu from '#lib/components/AyahMenu.svelte';
+	import OptionsWheel from '#lib/components/OptionsWheel.svelte';
+	import { settings } from '#lib/stores/settings.svelte.js';
+
+	const delays = [3, 2.5, 2, 1.5, 1, 0.5, 0];
 
 	let { children }: LayoutProps = $props();
 </script>
@@ -55,29 +59,37 @@
 	<div class="player">
 		<div></div>
 		<div class="player-controls">
-			<button class="btn icon" onclick={() => player.previous()} aria-label="Previous verse">
-				<SkipBack />
-			</button>
-			<button
-				class="btn icon primary"
-				onclick={() => player.toggle()}
-				aria-label={player.status === 'playing' ? 'Pause' : 'Play'}
-				disabled={player.status === 'loading'}
-			>
-				{#if player.status == 'playing'}
-					<Pause />
-				{:else}
-					<Play />
-				{/if}
-			</button>
-			<button class="btn icon" onclick={() => player.next()} aria-label="Next verse">
-				<SkipForward />
-			</button>
+				<button class="btn icon" onclick={() => player.previous()} aria-label="Previous verse">
+					<SkipBack />
+				</button>
+				<button
+					class="btn icon primary"
+					onclick={() => player.toggle()}
+					aria-label={player.status === 'playing' ? 'Pause' : 'Play'}
+					disabled={player.status === 'loading'}
+				>
+					{#if player.status == 'playing'}
+						<Pause />
+					{:else}
+						<Play />
+					{/if}
+				</button>
+				<button class="btn icon" onclick={() => player.next()} aria-label="Next verse">
+					<SkipForward />
+				</button>
 		</div>
-		<div>
+		<div class="player-extras">
 			<button class="btn icon" onclick={() => player.stop()} aria-label="Stop">
 				<Square />
 			</button>
+			<div class="delay-wheel" aria-label="Delay between replays">
+				<OptionsWheel
+					options={delays}
+					selectedIndex={Math.max(0, delays.indexOf(settings.loopDelay))}
+					format={(d) => (d === 0 ? 'Off' : `${d}s`)}
+					onchange={(d) => settings.setLoopDelay(d)}
+				/>
+			</div>
 		</div>
 	</div>
 	{#if player.error}
@@ -161,6 +173,21 @@
 	.player-controls {
 		display: flex;
 		gap: 1rem;
+		align-items: center;
+	}
+
+	.player-extras {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.5rem;
+		padding-right: 0.5rem;
+	}
+
+	.delay-wheel {
+		width: 3.5rem;
+		--wheel-font-size: 1rem;
 	}
 
 	.player-error {

@@ -7,11 +7,13 @@ const STORAGE_KEY = 'ayah-settings';
 type StoredSettings = {
 	reciterId: ReciterId;
 	autoContinue: boolean;
+	loopDelay: number; // seconds between replays
 };
 
 const defaults: StoredSettings = {
 	reciterId: 'sudais',
-	autoContinue: true
+	autoContinue: true,
+	loopDelay: 0
 };
 
 function load(): StoredSettings {
@@ -36,6 +38,15 @@ class Settings {
 
 	get autoContinue() {
 		return this.#state.autoContinue;
+	}
+
+	get loopDelay() {
+		return this.#state.loopDelay;
+	}
+
+	setLoopDelay(seconds: number) {
+		this.#state.loopDelay = Math.max(0, Number.isFinite(seconds) ? seconds : 0);
+		this.#save();
 	}
 
 	setReciter(id: ReciterId) {

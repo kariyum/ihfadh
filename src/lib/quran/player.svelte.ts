@@ -17,6 +17,7 @@ export class Player {
 	#audioContext: AudioContext | null = null;
 	#sources: AudioBufferSourceNode[] = [];
 	#scheduledEndTime: number = 0;
+	#pendingGap: number = 0;
 	#quranIndexKeeper: QuranIndexKeeper;
 	#loopPromise: Promise<void> | null = null;
 	#ayahToSchedule: Ayah | null = null;
@@ -84,11 +85,16 @@ export class Player {
 		if (state == this.#state) {
 			source.onended = () => this.onVerseEnd();
 			source.connect(this.#audioContext.destination);
-			const startTime = Math.max(this.#audioContext.currentTime, this.#scheduledEndTime);
+			const startTime =
+				Math.max(this.#audioContext.currentTime, this.#scheduledEndTime) + this.#pendingGap;
+			this.#pendingGap = 0;
 			source.start(startTime);
 			this.#sources.push(source);
 			this.#scheduledEndTime = startTime + source.buffer.duration - 0.08;
+			const wrapped = !!this.#endAyah && this.sameAyah(this.#ayahToSchedule, this.#endAyah);
 			this.#ayahToSchedule = this.nextInRange(this.#ayahToSchedule);
+			// delay only between replays, never before the first recitation
+			if (wrapped) this.#pendingGap = settings.loopDelay;
 			this.#ayahBufferCount += 1;
 			this.error = null;
 		}
@@ -156,6 +162,7 @@ export class Player {
 		this.#sources = [];
 		this.#ayahBufferCount = 0;
 		this.#scheduledEndTime = 0;
+		this.#pendingGap = 0;
 		this.#startAyah = null;
 		this.#endAyah = null;
 		this.currentAyah = null;
