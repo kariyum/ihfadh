@@ -1,6 +1,20 @@
-<script>
+<script lang="ts">
 	import { player } from '#lib/quran/data.ts';
+	import type { Ayah } from '#lib/quran/types.ts';
 	import { ayahMenuState } from '#lib/stores/ayahmenu.svelte.ts';
+
+	let firstAyah: Ayah | null = $state(null);
+	let lastAyah: Ayah | null = $state(null);
+
+	const assignFirstAyah = () => {
+		if (ayahMenuState.selectedAyah) firstAyah = ayahMenuState.selectedAyah;
+		ayahMenuState.hide();
+	};
+	const assignLastAyahAndPlay = () => {
+		if (ayahMenuState.selectedAyah) lastAyah = ayahMenuState.selectedAyah;
+		if (firstAyah) player.play(firstAyah, lastAyah);
+		ayahMenuState.hide();
+	};
 </script>
 
 <div
@@ -18,10 +32,14 @@
 				onclick={() => {
 					if (ayahMenuState.selectedAyah) player.play(ayahMenuState.selectedAyah);
 					ayahMenuState.hide();
-				}}>Start reciting from here</button
+				}}>Start</button
 			>
 		</li>
-		<li><button>End here</button></li>
+		<li>
+			<button onclick={assignFirstAyah}>Mark start ayah</button>
+		</li>
+		<li><button onclick={assignLastAyahAndPlay}>Mark last ayah</button></li>
+		<li><button>Loop recit surah</button></li>
 	</menu>
 </div>
 

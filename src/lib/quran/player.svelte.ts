@@ -12,6 +12,7 @@ export class Player {
 
 	currentAyah = $state<Ayah | null>(null);
 	#startAyah = $state<Ayah | null>(null);
+    #endAyah = $state<Ayah | null>(null);
 
 	#audioContext: AudioContext | null = null;
 	#sources: AudioBufferSourceNode[] = [];
@@ -32,22 +33,34 @@ export class Player {
 		}
 	}
 
-	async play(ayah: Ayah) {
+	async play(ayah: Ayah, lastAyah: Ayah | null) {
 		if (!this.#audioContext) return;
 		await this.stop();
 		this.#startAyah = ayah;
 		this.currentAyah = ayah;
 		this.#ayahToSchedule = ayah;
+        this.#endAyah = lastAyah;
 
 		this.status = 'loading';
 		this.error = null;
 		this.#scheduledEndTime = 0;
 
 		this.notifyOnRecite(null, this.currentAyah);
-		this.playLoop(this.#state);
+        this.playLoop(this.#state);
 
 		await this.#audioContext.resume();
 		this.status = 'playing';
+	}
+
+	private sameAyah(a: Ayah | null, b: Ayah | null) {
+		return !!a && !!b && a.surahIndex === b.surahIndex && a.index === b.index;
+	}
+
+	private nextInRange(ayah: Ayah): Ayah | null {
+		if (this.#endAyah && this.#startAyah && this.sameAyah(ayah, this.#endAyah)) {
+			return this.#startAyah;
+		}
+		return this.#quranIndexKeeper.next(ayah);
 	}
 
 	private notifyOnRecite(currentAyah: Ayah | null, nextAyah: Ayah | null) {
@@ -68,7 +81,7 @@ export class Player {
 			source.start(startTime);
 			this.#sources.push(source);
 			this.#scheduledEndTime = startTime + source.buffer.duration - 0.08;
-			this.#ayahToSchedule = this.#quranIndexKeeper.next(this.#ayahToSchedule);
+			this.#ayahToSchedule = this.nextInRange(this.#ayahToSchedule);
 			this.#ayahBufferCount += 1;
 			this.error = null;
 		}
@@ -76,7 +89,7 @@ export class Player {
 
 	private onVerseEnd() {
 		if (this.currentAyah) {
-			const nextAyah = this.#quranIndexKeeper.next(this.currentAyah);
+			const nextAyah = this.nextInRange(this.currentAyah);
 			if (!nextAyah) {
 				this.status = 'idle';
 			}
@@ -127,7 +140,7 @@ export class Player {
 		};
 	}
 
-    async stop() {
+	async stop() {
 		this.#state += 1;
 		await this.#schedulePromise;
 		this.#cancelScheduleTimeout();
@@ -137,6 +150,7 @@ export class Player {
 		this.#ayahBufferCount = 0;
 		this.#scheduledEndTime = 0;
 		this.#startAyah = null;
+		this.#endAyah = null;
 		this.currentAyah = null;
 		this.#ayahToSchedule = null;
 		this.status = 'idle';
