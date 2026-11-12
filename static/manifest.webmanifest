@@ -3,7 +3,7 @@
 	"short_name": "Ayah",
 	"description": "Read the Quran and listen to your favourite reciter, verse by verse.",
 	"id": "./",
-	"start_url": "./",
+	"start_url": "./quran?page=1",
 	"scope": "./",
 	"display": "standalone",
 	"orientation": "portrait",
