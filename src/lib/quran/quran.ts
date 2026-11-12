@@ -11,6 +11,14 @@ export class QuranIndexKeeper {
 			.map((surahIndex) => surahIndex.ayahCount);
 	}
 
+	firstAyahOfSurah(surahIndex: number): Ayah {
+		return { surahIndex, index: 1 };
+	}
+
+	lastAyahOfSurah(surahIndex: number): Ayah {
+		return { surahIndex, index: this.#ayahCounts[surahIndex - 1] };
+	}
+
 	next(ayahIndex: Ayah): Ayah | null {
 		const atEndOfSurah = ayahIndex.index == this.#ayahCounts[ayahIndex.surahIndex - 1];
 		if (!atEndOfSurah) {

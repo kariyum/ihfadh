@@ -39,7 +39,14 @@
 			<button onclick={assignFirstAyah}>Mark start ayah</button>
 		</li>
 		<li><button onclick={assignLastAyahAndPlay}>Mark last ayah</button></li>
-		<li><button>Loop recit surah</button></li>
+		<li>
+			<button
+				onclick={() => {
+					if (ayahMenuState.selectedAyah) player.playSurah(ayahMenuState.selectedAyah.surahIndex);
+					ayahMenuState.hide();
+				}}>Loop recite surah</button
+			>
+		</li>
 	</menu>
 </div>
 

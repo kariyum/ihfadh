@@ -33,7 +33,14 @@ export class Player {
 		}
 	}
 
-	async play(ayah: Ayah, lastAyah: Ayah | null) {
+	async playSurah(surahIndex: number) {
+		await this.play(
+			this.#quranIndexKeeper.firstAyahOfSurah(surahIndex),
+			this.#quranIndexKeeper.lastAyahOfSurah(surahIndex)
+		);
+	}
+
+	async play(ayah: Ayah, lastAyah: Ayah | null = null) {
 		if (!this.#audioContext) return;
 		await this.stop();
 		this.#startAyah = ayah;
